@@ -138,41 +138,51 @@ If your Laravel app already has a blog, authors, or categories, map them so Syne
 
 ### C. Configure AI Blog Insertion (`actions.insert_blog`)
 
-Out of the box, SynergizeFlow provides a plug-and-play **`DefaultInsertBlogAction`** that automatically saves incoming articles directly to the model mapped under `content_providers.blog`. 
+By default, the package uses `DefaultInsertBlogAction` to automatically insert AI-generated articles using the Eloquent model and fields defined in your `content_providers.blog` mapping. **For standard, single-domain Laravel applications, no further action is required.**
 
-**No custom code is required for 90% of use cases!**
+#### 🛠️ For Complex or Multi-Domain Applications (Advanced)
 
-However, if your application has custom requirements (e.g. multi-tenancy, translations with spatie/laravel-translatable, or dispatching custom events), you can override it with your own custom Action:
+If your Laravel application uses a complex database architecture—such as multi-tenancy (requiring a `tenant_id`), multi-domain structures (requiring a `domain_id`), or translation packages (like `spatie/laravel-translatable`)—the default `Model::create()` action will likely fail because it does not know how to populate these specialized fields.
 
-1. Create a class implementing `SynergizeFlow\Laravel\Contracts\InsertBlogContract`:
+To handle complex database insertions, you can easily override the default action with a Custom Action Class:
 
-```php
-namespace App\Actions;
+1. **Create a Custom Action:**
+   Create a class that implements `SynergizeFlow\Laravel\Contracts\InsertBlogContract` and define your custom insertion logic.
 
-use SynergizeFlow\Laravel\Contracts\InsertBlogContract;
-use App\Models\Post;
+   ```php
+   namespace App\Actions;
 
-class InsertCustomBlogAction implements InsertBlogContract
-{
-    public function execute(array $payload): mixed
-    {
-        return Post::create([
-            'title' => $payload['title'],
-            'content' => $payload['content'],
-            'slug' => $payload['slug'],
-            'status' => 'published',
-        ]);
-    }
-}
-```
+   use SynergizeFlow\Laravel\Contracts\InsertBlogContract;
+   use App\Models\BlogPost;
+   use App\Models\Domain;
 
-2. Register your custom Action in `config/synergizeflow.php`:
+   class InsertComplexBlogAction implements InsertBlogContract
+   {
+       public function execute(array $payload): mixed
+       {
+           // Example: Dynamically resolve a domain_id based on the APP_URL
+           $appHost = parse_url(env('APP_URL'), PHP_URL_HOST) ?? request()->getHost();
+           $domain = Domain::where('name', 'LIKE', '%' . $appHost . '%')->first();
+           
+           return BlogPost::create([
+               'domain_id' => $domain->id ?? 1,
+               'title' => $payload['title'],
+               'content' => $payload['content'],
+               'category_id' => $payload['category_id'] ?? null,
+           ]);
+       }
+   }
+   ```
 
-```php
-'actions' => [
-    'insert_blog' => \App\Actions\InsertCustomBlogAction::class,
-],
-```
+2. **Register Your Custom Action:**
+   Open `config/synergizeflow.php` and override the `insert_blog` action:
+
+   ```php
+   'actions' => [
+       // Replace DefaultInsertBlogAction with your custom class
+       'insert_blog' => \App\Actions\InsertComplexBlogAction::class,
+   ],
+   ```
 
 *(Alternatively, if your app does not have a blog database, install the optional companion package `synergizeflow/laravel-onboarding-blog` which provides ready-to-use migrations and models).*
 
