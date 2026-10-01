@@ -60,7 +60,45 @@ class SynergizeFlowController extends Controller
             }
         }
 
+        // Check for mapped pages
+        $pageConfig = $providers['page'] ?? null;
+        if ($pageConfig && ! empty($pageConfig['model']) && class_exists($pageConfig['model'])) {
+            $modelClass = $pageConfig['model'];
+            $limit = $pageConfig['limit'] ?? 10;
+            $titleField = $pageConfig['fields']['title'] ?? 'title';
+            $contentField = $pageConfig['fields']['content'] ?? 'content';
+
+            $records = $modelClass::query()->latest()->take($limit)->get();
+
+            $pages = $records->map(function ($item) use ($titleField, $contentField) {
+                return [
+                    'title' => $item->{$titleField} ?? '',
+                    'content' => $item->{$contentField} ?? '',
+                ];
+            });
+
+            if ($pages->isNotEmpty()) {
+                $content[] = [
+                    'key' => 'page',
+                    'name' => $pageConfig['name'] ?? 'Pages Content',
+                    'posts' => $pages->all(),
+                ];
+            }
+        }
+
+        $scanData = $this->resolveScanUrls();
+        $scanUrls = $scanData['urls'];
+        $scanPages = $scanData['pages'];
+
         $workflow = empty($content) ? 'B' : 'A';
+
+        $message = 'Content loaded successfully.';
+        if (empty($content)) {
+            $urlCount = count($scanUrls);
+            $message = $urlCount > 1
+                ? "No blog mapping found. {$urlCount} scan URLs provided for analysis."
+                : 'No blog mapping found. Please analyze homepage URL.';
+        }
 
         return response()->json([
             'status' => 'success',
@@ -71,12 +109,13 @@ class SynergizeFlowController extends Controller
                     'website_name' => config('synergizeflow.website_name'),
                     'website_description' => config('synergizeflow.website_description'),
                     'website_language' => config('synergizeflow.website_language'),
+                    'scan_urls' => $scanUrls,
+                    'scan_pages' => $scanPages,
                 ],
+                'scan_urls' => $scanUrls,
                 'content' => $content,
             ],
-            'message' => empty($content)
-                ? 'No blog mapping found. Please analyze homepage URL.'
-                : 'Content loaded successfully.',
+            'message' => $message,
         ]);
     }
 
@@ -202,5 +241,88 @@ class SynergizeFlowController extends Controller
             'message' => 'Blog inserted successfully.',
             'data' => $result,
         ]);
+    }
+
+    /**
+     * Resolve and normalize the list of URLs to scan during onboarding.
+     *
+     * @return array{urls: array<string>, pages: array<array{url: string, title: string}>}
+     */
+    protected function resolveScanUrls(): array
+    {
+        $baseUrl = (string) config('synergizeflow.website_url', config('app.url', 'http://localhost'));
+        $rawUrls = config('synergizeflow.scan_urls', []);
+
+        if (! is_array($rawUrls) || empty($rawUrls)) {
+            $normalizedUrl = rtrim($baseUrl, '/');
+
+            return [
+                'urls' => [$normalizedUrl],
+                'pages' => [
+                    [
+                        'url' => $normalizedUrl,
+                        'title' => (string) config('synergizeflow.website_name', 'Homepage'),
+                    ],
+                ],
+            ];
+        }
+
+        $urls = [];
+        $pages = [];
+
+        foreach ($rawUrls as $key => $value) {
+            $url = '';
+            $title = '';
+
+            if (is_array($value)) {
+                $url = (string) ($value['url'] ?? $value['path'] ?? '');
+                $title = (string) ($value['title'] ?? $value['label'] ?? $value['name'] ?? '');
+            } elseif (is_string($key)) {
+                $url = $key;
+                $title = (string) $value;
+            } else {
+                $url = (string) $value;
+            }
+
+            $url = trim($url);
+            if ($url === '') {
+                continue;
+            }
+
+            // Prefix relative paths with website_url
+            if (! preg_match('#^https?://#i', $url)) {
+                $trimmedPath = ltrim($url, '/');
+                $url = $trimmedPath === '' ? rtrim($baseUrl, '/') : rtrim($baseUrl, '/').'/'.$trimmedPath;
+            }
+
+            if (empty($title)) {
+                $path = parse_url($url, PHP_URL_PATH);
+                $title = empty($path) || $path === '/' ? 'Homepage' : ucwords(trim(str_replace(['-', '_', '/'], ' ', $path)));
+            }
+
+            if (! in_array($url, $urls, true)) {
+                $urls[] = $url;
+                $pages[] = [
+                    'url' => $url,
+                    'title' => $title,
+                ];
+            }
+        }
+
+        if (empty($urls)) {
+            $normalizedUrl = rtrim($baseUrl, '/');
+            $urls = [$normalizedUrl];
+            $pages = [
+                [
+                    'url' => $normalizedUrl,
+                    'title' => (string) config('synergizeflow.website_name', 'Homepage'),
+                ],
+            ];
+        }
+
+        return [
+            'urls' => $urls,
+            'pages' => $pages,
+        ];
     }
 }
