@@ -12,40 +12,21 @@ use SynergizeFlow\Laravel\Contracts\InsertBlogContract;
 class SynergizeFlowController extends Controller
 {
     /**
-     * Validate license endpoint (Domain Ownership & Handshake Verification).
-     *
-     * Note for Developers:
-     * This endpoint is invoked by the SynergizeFlow SaaS platform to perform an initial
-     * domain ownership handshake. It ensures that the SaaS is communicating with the correct
-     * intended domain and that the site administrator has administrative control over this server.
-     *
-     * Overriding this method to return 'yes' or logging incoming payloads offers no loophole:
-     * 1. Domain Ownership: Only an administrator with server access can configure or inspect this app.
-     * 2. Operational Authentication: All functional endpoints (/get-website-data, /helper-data,
-     *    and /insert-blog) are strictly guarded by VerifySynergizeFlowToken middleware using the
-     *    configured security_key.
-     * 3. Compute Isolation: AI agent execution and billing run entirely on the SaaS backend,
-     *    so a mismatched or hardcoded local response will simply result in 401 errors for actual tasks.
-     */
-    public function validateLicense(Request $request): JsonResponse
-    {
-        $expectedKey = (string) config('synergizeflow.security_key');
-        $license = (string) ($request->input('license') ?? $request->input('key') ?? '');
-
-        $isValid = ! empty($expectedKey) && ! empty($license) && hash_equals($expectedKey, $license);
-
-        return response()->json([
-            'is_valid' => $isValid ? 'yes' : 'no',
-        ]);
-    }
-
-    /**
      * Get website onboarding data and determine Workflow ('blog_data' vs 'scan_urls').
      */
     public function getWebsiteData(Request $request): JsonResponse
     {
         $providers = config('synergizeflow.content_providers', []);
         $content = [];
+
+        // Resolve categories to match WordPress category list
+        $cats = [];
+        $categoryConfig = $providers['category'] ?? null;
+        if ($categoryConfig && ! empty($categoryConfig['model']) && class_exists($categoryConfig['model'])) {
+            $catModel = $categoryConfig['model'];
+            $nameField = $categoryConfig['fields']['name'] ?? 'name';
+            $cats = $catModel::query()->pluck($nameField)->map(fn ($name) => (string) $name)->values()->all();
+        }
 
         // Check for mapped blog posts
         $blogConfig = $providers['blog'] ?? null;
@@ -59,16 +40,16 @@ class SynergizeFlowController extends Controller
 
             $posts = $records->map(function ($item) use ($titleField, $contentField) {
                 return [
-                    'title' => $item->{$titleField} ?? '',
-                    'content' => $item->{$contentField} ?? '',
+                    'title' => (string) ($item->{$titleField} ?? ''),
+                    'content' => (string) ($item->{$contentField} ?? ''),
                 ];
             });
 
             if ($posts->isNotEmpty()) {
                 $content[] = [
-                    'key' => 'blog',
-                    'name' => $blogConfig['name'] ?? 'Blog Posts',
-                    'category' => [],
+                    'key' => $blogConfig['key'] ?? 'post',
+                    'name' => $blogConfig['name'] ?? 'Posts content',
+                    'category' => $cats,
                     'posts' => $posts->all(),
                 ];
             }
@@ -86,15 +67,15 @@ class SynergizeFlowController extends Controller
 
             $pages = $records->map(function ($item) use ($titleField, $contentField) {
                 return [
-                    'title' => $item->{$titleField} ?? '',
-                    'content' => $item->{$contentField} ?? '',
+                    'title' => (string) ($item->{$titleField} ?? ''),
+                    'content' => (string) ($item->{$contentField} ?? ''),
                 ];
             });
 
             if ($pages->isNotEmpty()) {
                 $content[] = [
                     'key' => 'page',
-                    'name' => $pageConfig['name'] ?? 'Pages Content',
+                    'name' => $pageConfig['name'] ?? 'Pages content',
                     'posts' => $pages->all(),
                 ];
             }
@@ -126,7 +107,6 @@ class SynergizeFlowController extends Controller
                     'scan_urls' => $scanUrls,
                     'scan_pages' => $scanPages,
                 ],
-                'scan_urls' => $scanUrls,
                 'content' => $content,
             ],
             'message' => $message,
@@ -207,8 +187,8 @@ class SynergizeFlowController extends Controller
             case 'get_version':
                 return response()->json([
                     'data' => [
-                        'current_version' => '1.0.8',
-                        'latest_version' => '1.0.8',
+                        'current_version' => '1.0.9',
+                        'latest_version' => '1.0.9',
                         'need_update' => false,
                     ],
                 ]);
