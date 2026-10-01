@@ -25,7 +25,9 @@ class SynergizeFlowController extends Controller
         if ($categoryConfig && ! empty($categoryConfig['model']) && class_exists($categoryConfig['model'])) {
             $catModel = $categoryConfig['model'];
             $nameField = $categoryConfig['fields']['name'] ?? 'name';
-            $cats = $catModel::query()->pluck($nameField)->map(fn ($name) => (string) $name)->values()->all();
+            $cats = $catModel::query()->get()->map(function ($item) use ($nameField) {
+                return (string) ($item->{$nameField} ?? '');
+            })->filter()->values()->all();
         }
 
         // Check for mapped blog posts
@@ -187,8 +189,8 @@ class SynergizeFlowController extends Controller
             case 'get_version':
                 return response()->json([
                     'data' => [
-                        'current_version' => '1.0.9',
-                        'latest_version' => '1.0.9',
+                        'current_version' => '1.0.10',
+                        'latest_version' => '1.0.10',
                         'need_update' => false,
                     ],
                 ]);
