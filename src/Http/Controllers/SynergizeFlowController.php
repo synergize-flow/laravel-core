@@ -39,7 +39,7 @@ class SynergizeFlowController extends Controller
     }
 
     /**
-     * Get website onboarding data and determine Workflow (A vs B).
+     * Get website onboarding data and determine Workflow ('blog_data' vs 'scan_urls').
      */
     public function getWebsiteData(Request $request): JsonResponse
     {
@@ -103,7 +103,7 @@ class SynergizeFlowController extends Controller
         $scanUrls = $scanData['urls'];
         $scanPages = $scanData['pages'];
 
-        $workflow = empty($content) ? 'B' : 'A';
+        $workflow = empty($content) ? 'scan_urls' : 'blog_data';
 
         $message = 'Content loaded successfully.';
         if (empty($content)) {
@@ -206,8 +206,8 @@ class SynergizeFlowController extends Controller
             case 'get_version':
                 return response()->json([
                     'data' => [
-                        'current_version' => '1.0.5',
-                        'latest_version' => '1.0.5',
+                        'current_version' => '1.0.6',
+                        'latest_version' => '1.0.6',
                         'need_update' => false,
                     ],
                 ]);
