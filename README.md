@@ -138,9 +138,13 @@ If your Laravel app already has a blog, authors, or categories, map them so Syne
 
 ### C. Configure AI Blog Insertion (`actions.insert_blog`)
 
-When a SynergizeFlow AI Agent generates a new article, it sends a webhook to your application. To handle how this post is saved to your database:
+Out of the box, SynergizeFlow provides a plug-and-play **`DefaultInsertBlogAction`** that automatically saves incoming articles directly to the model mapped under `content_providers.blog`. 
 
-1. Create an Action class that implements `SynergizeFlow\Laravel\Contracts\InsertBlogContract`:
+**No custom code is required for 90% of use cases!**
+
+However, if your application has custom requirements (e.g. multi-tenancy, translations with spatie/laravel-translatable, or dispatching custom events), you can override it with your own custom Action:
+
+1. Create a class implementing `SynergizeFlow\Laravel\Contracts\InsertBlogContract`:
 
 ```php
 namespace App\Actions;
@@ -155,16 +159,14 @@ class InsertCustomBlogAction implements InsertBlogContract
         return Post::create([
             'title' => $payload['title'],
             'content' => $payload['content'],
-            'excerpt' => $payload['excerpt'] ?? null,
-            'featured_image' => $payload['featured_image'] ?? null,
-            'author_id' => $payload['author_id'] ?? null,
+            'slug' => $payload['slug'],
             'status' => 'published',
         ]);
     }
 }
 ```
 
-2. Register your Action class in `config/synergizeflow.php`:
+2. Register your custom Action in `config/synergizeflow.php`:
 
 ```php
 'actions' => [

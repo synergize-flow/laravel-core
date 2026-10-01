@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use SynergizeFlow\Laravel\Actions\DefaultInsertBlogAction;
 
 return [
     'website_name' => env('APP_NAME', 'Laravel App'),
@@ -91,9 +92,15 @@ return [
     'actions' => [
         /**
          * Must implement \SynergizeFlow\Laravel\Contracts\InsertBlogContract
+         *
+         * By default, SynergizeFlow provides a plug-and-play DefaultInsertBlogAction
+         * that automatically creates articles using the 'content_providers.blog' mapping.
+         *
+         * You can override this with your own custom Action class if your application
+         * requires custom saving logic (e.g. multi-tenancy, translations, or event dispatches):
          * Example: \App\Actions\InsertBlogAction::class
          * Or if using the headless blog extension: \SynergizeFlow\Blog\Actions\InsertHeadlessBlogAction::class
          */
-        'insert_blog' => null,
+        'insert_blog' => DefaultInsertBlogAction::class,
     ],
 ];

@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use SynergizeFlow\Laravel\Actions\DefaultInsertBlogAction;
 use SynergizeFlow\Laravel\Contracts\InsertBlogContract;
 
 class SynergizeFlowController extends Controller
@@ -206,8 +207,8 @@ class SynergizeFlowController extends Controller
             case 'get_version':
                 return response()->json([
                     'data' => [
-                        'current_version' => '1.0.6',
-                        'latest_version' => '1.0.6',
+                        'current_version' => '1.0.7',
+                        'latest_version' => '1.0.7',
                         'need_update' => false,
                     ],
                 ]);
@@ -222,14 +223,8 @@ class SynergizeFlowController extends Controller
      */
     public function insertBlog(Request $request): JsonResponse
     {
-        $actionClass = config('synergizeflow.actions.insert_blog');
-
-        if (empty($actionClass)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'No insert_blog action configured in config/synergizeflow.php.',
-            ], 422);
-        }
+        $actionClass = config('synergizeflow.actions.insert_blog')
+            ?: DefaultInsertBlogAction::class;
 
         if (! class_exists($actionClass)) {
             return response()->json([
@@ -245,15 +240,22 @@ class SynergizeFlowController extends Controller
             ], 500);
         }
 
-        /** @var InsertBlogContract $action */
-        $action = app($actionClass);
-        $result = $action->execute($request->all());
+        try {
+            /** @var InsertBlogContract $action */
+            $action = app($actionClass);
+            $result = $action->execute($request->all());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Blog inserted successfully.',
-            'data' => $result,
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Blog inserted successfully.',
+                'data' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     /**
