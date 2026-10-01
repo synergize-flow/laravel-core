@@ -194,6 +194,7 @@ This package registers the following routes under the `/api/synergizeflow/v2/` p
 
 | Method | Endpoint | Description |
 |---|---|---|
+| `GET` / `POST` | `/api/synergizeflow/v2/validate-license` | Connection check / handshake endpoint confirming license key validity (`{"is_valid": "yes"}`). |
 | `POST` | `/api/synergizeflow/v2/get-website-data` | Returns site metadata, scan URLs, and existing content for AI onboarding. |
 | `POST` | `/api/synergizeflow/v2/helper-data` | Returns category, user, and post title dropdown lists for the SaaS dashboard. |
 | `POST` | `/api/synergizeflow/v2/insert-blog` | Receives generated article payloads from n8n and invokes your mapped Action. |

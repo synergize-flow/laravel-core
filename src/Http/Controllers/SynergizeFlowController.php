@@ -12,6 +12,17 @@ use SynergizeFlow\Laravel\Contracts\InsertBlogContract;
 class SynergizeFlowController extends Controller
 {
     /**
+     * Validate license endpoint (Domain Ownership & Handshake Verification).
+     * Protected by VerifySynergizeFlowToken middleware.
+     */
+    public function validateLicense(): JsonResponse
+    {
+        return response()->json([
+            'is_valid' => 'yes',
+        ]);
+    }
+
+    /**
      * Get website onboarding data and determine Workflow ('blog_data' vs 'scan_urls').
      */
     public function getWebsiteData(Request $request): JsonResponse
@@ -189,8 +200,8 @@ class SynergizeFlowController extends Controller
             case 'get_version':
                 return response()->json([
                     'data' => [
-                        'current_version' => '1.0.10',
-                        'latest_version' => '1.0.10',
+                        'current_version' => '1.0.11',
+                        'latest_version' => '1.0.11',
                         'need_update' => false,
                     ],
                 ]);
