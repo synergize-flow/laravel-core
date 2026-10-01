@@ -206,8 +206,8 @@ class SynergizeFlowController extends Controller
             case 'get_version':
                 return response()->json([
                     'data' => [
-                        'current_version' => '1.0.4',
-                        'latest_version' => '1.0.4',
+                        'current_version' => '1.0.5',
+                        'latest_version' => '1.0.5',
                         'need_update' => false,
                     ],
                 ]);

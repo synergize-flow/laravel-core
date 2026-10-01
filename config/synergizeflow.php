@@ -40,7 +40,7 @@ return [
      * Relative paths will automatically be resolved against website_url.
      */
     'scan_urls' => [
-        // '/',
+        '/',
     ],
 
     /**
