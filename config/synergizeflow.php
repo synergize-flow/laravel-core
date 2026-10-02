@@ -103,4 +103,16 @@ return [
          */
         'insert_blog' => DefaultInsertBlogAction::class,
     ],
+
+    /**
+     * Storage disk used for saving downloaded assets (like featured images).
+     * Defaults to 'public' (accessible via php artisan storage:link).
+     * Can be set to 's3' or any other disk configured in config/filesystems.php.
+     */
+    'storage_disk' => env('SYNERGIZEFLOW_STORAGE_DISK', 'public'),
+
+    /**
+     * Directory path on the storage disk where downloaded images are saved.
+     */
+    'storage_path' => env('SYNERGIZEFLOW_STORAGE_PATH', 'blogs'),
 ];

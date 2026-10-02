@@ -2,6 +2,9 @@
 
 namespace SynergizeFlow\Laravel\Actions;
 
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 use SynergizeFlow\Laravel\Contracts\InsertBlogContract;
@@ -53,7 +56,8 @@ class DefaultInsertBlogAction implements InsertBlogContract
         // 5. Featured Image
         $imageField = $fields['featured_image'] ?? $fields['image'] ?? null;
         if ($imageField) {
-            $attributes[$imageField] = $payload['featured_image'] ?? $payload['image'] ?? null;
+            $rawImage = $payload['featured_image'] ?? $payload['image'] ?? null;
+            $attributes[$imageField] = $this->storeFeaturedImage($rawImage);
         }
 
         // 6. Author ID
@@ -80,5 +84,73 @@ class DefaultInsertBlogAction implements InsertBlogContract
 
         // Insert into database via Eloquent
         return $modelClass::create($attributes);
+    }
+
+    /**
+     * Download and store a remote featured image to the configured storage disk.
+     */
+    protected function storeFeaturedImage(?string $image): ?string
+    {
+        if (empty($image) || ! filter_var($image, FILTER_VALIDATE_URL)) {
+            return $image;
+        }
+
+        $disk = config('synergizeflow.storage_disk', 'public');
+        $directory = trim((string) config('synergizeflow.storage_path', 'blogs'), '/');
+
+        try {
+            $response = Http::timeout(20)->get($image);
+
+            if (! $response->successful()) {
+                Log::warning("SynergizeFlow: Failed to download featured image [{$image}], status: {$response->status()}");
+
+                return $image;
+            }
+
+            $extension = $this->guessExtension(
+                $response->header('Content-Type'),
+                $image
+            );
+
+            $filename = ($directory !== '' ? $directory.'/' : '').Str::random(40).'.'.$extension;
+
+            Storage::disk($disk)->put($filename, $response->body(), 'public');
+
+            return Storage::disk($disk)->url($filename);
+        } catch (\Throwable $e) {
+            Log::warning("SynergizeFlow: Exception downloading featured image [{$image}]: ".$e->getMessage());
+
+            return $image;
+        }
+    }
+
+    /**
+     * Guess the appropriate file extension based on MIME type or URL.
+     */
+    protected function guessExtension(?string $contentType, string $url): string
+    {
+        $mimeMap = [
+            'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            'image/svg+xml' => 'svg',
+        ];
+
+        if ($contentType) {
+            $cleanMime = trim(explode(';', $contentType)[0]);
+            if (isset($mimeMap[$cleanMime])) {
+                return $mimeMap[$cleanMime];
+            }
+        }
+
+        $urlPath = parse_url($url, PHP_URL_PATH);
+        $pathExt = is_string($urlPath) ? strtolower(pathinfo($urlPath, PATHINFO_EXTENSION)) : '';
+        if (in_array($pathExt, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true)) {
+            return $pathExt === 'jpeg' ? 'jpg' : $pathExt;
+        }
+
+        return 'jpg';
     }
 }
