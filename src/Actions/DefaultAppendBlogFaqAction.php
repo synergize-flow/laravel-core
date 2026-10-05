@@ -46,7 +46,7 @@ class DefaultAppendBlogFaqAction implements AppendBlogFaqContract
         // Generate FAQ HTML
         $faq = $payload['faq'] ?? null;
         $faqHtml = '';
-        if ($faq && is_array($faq) && !empty($faq['mainEntity'])) {
+        if ($faq && is_array($faq) && !empty($faq)) {
             $css = "<style>\n" .
                    "    .sf-faq-wrapper { font-family: inherit; margin-top: 2rem; }\n" .
                    "    .sf-faq-wrapper h2 { margin-bottom: 1.5rem; }\n" .
@@ -69,10 +69,10 @@ class DefaultAppendBlogFaqAction implements AppendBlogFaqContract
                    "    }\n" .
                    "</style>";
             $faqHtml = "\n\n" . $css . "\n" . '<div class="sf-faq-wrapper">' . "\n  <h2>Frequently Asked Questions</h2>";
-            foreach ($faq['mainEntity'] as $item) {
-                if (isset($item['name']) && isset($item['acceptedAnswer']['text'])) {
-                    $question = htmlspecialchars($item['name']);
-                    $answer = $item['acceptedAnswer']['text'];
+            foreach ($faq as $item) {
+                if (isset($item['question']) && isset($item['answer'])) {
+                    $question = htmlspecialchars($item['question']);
+                    $answer = $item['answer'];
                     $faqHtml .= "\n  <details class=\"sf-faq-item\">\n" .
                                 "    <summary class=\"sf-faq-question\">\n" .
                                 "      {$question}\n" .
