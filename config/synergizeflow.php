@@ -102,6 +102,13 @@ return [
          * Or if using the headless blog extension: \SynergizeFlow\Blog\Actions\InsertHeadlessBlogAction::class
          */
         'insert_blog' => DefaultInsertBlogAction::class,
+        
+        /**
+         * Must implement \SynergizeFlow\Laravel\Contracts\AppendBlogFaqContract
+         *
+         * Handles appending generated FAQ schema and content to an existing blog post.
+         */
+        'append_blog_faq' => \SynergizeFlow\Laravel\Actions\DefaultAppendBlogFaqAction::class,
     ],
 
     /**

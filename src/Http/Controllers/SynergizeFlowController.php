@@ -252,6 +252,46 @@ class SynergizeFlowController extends Controller
     }
 
     /**
+     * Endpoint to append FAQ and schema to an existing blog.
+     */
+    public function submitBlogFaq(Request $request): JsonResponse
+    {
+        $actionClass = config('synergizeflow.actions.append_blog_faq')
+            ?: \SynergizeFlow\Laravel\Actions\DefaultAppendBlogFaqAction::class;
+
+        if (! class_exists($actionClass)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Configured action [{$actionClass}] does not exist.",
+            ], 500);
+        }
+
+        if (! is_subclass_of($actionClass, \SynergizeFlow\Laravel\Contracts\AppendBlogFaqContract::class)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Configured action [{$actionClass}] must implement ".\SynergizeFlow\Laravel\Contracts\AppendBlogFaqContract::class.'.',
+            ], 500);
+        }
+
+        try {
+            /** @var \SynergizeFlow\Laravel\Contracts\AppendBlogFaqContract $action */
+            $action = app($actionClass);
+            $result = $action->execute($request->all());
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'FAQ appended successfully.',
+                'data' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
      * Resolve and normalize the list of URLs to scan during onboarding.
      *
      * @return array{urls: array<string>, pages: array<array{url: string, title: string}>}
