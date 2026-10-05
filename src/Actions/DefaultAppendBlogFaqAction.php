@@ -62,7 +62,7 @@ class DefaultAppendBlogFaqAction implements AppendBlogFaqContract
                    "    .sf-faq-item:not([open]) .sf-faq-icon::before { content: \"+\"; }\n" .
                    "    .sf-faq-answer { margin-top: 1rem; color: #555; line-height: 1.6; }\n" .
                    "    .sf-faq-answer p { margin: 0; }\n" .
-                   "    .sf-faq-item[open] .sf-faq-answer { animation: sf-faq-fade-slide 0.3s ease-in-out forwards; }\n" .
+                   "    .sf-faq-item[open] .sf-faq-answer { animation: sf-faq-fade-slide 0.3s ease-in-out; }\n" .
                    "    @keyframes sf-faq-fade-slide {\n" .
                    "        0% { opacity: 0; transform: translateY(-5px); }\n" .
                    "        100% { opacity: 1; transform: translateY(0); }\n" .
