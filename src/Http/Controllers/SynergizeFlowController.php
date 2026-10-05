@@ -109,7 +109,7 @@ class SynergizeFlowController extends Controller
         }
 
         return response()->json([
-            'status' => 'success',
+            'status' => 'ok',
             'workflow' => $workflow,
             'data' => [
                 'website' => [
@@ -239,7 +239,7 @@ class SynergizeFlowController extends Controller
             $result = $action->execute($request->all());
 
             return response()->json([
-                'status' => 'success',
+                'status' => 'ok',
                 'message' => 'Blog inserted successfully.',
                 'data' => $result,
             ]);
@@ -279,7 +279,7 @@ class SynergizeFlowController extends Controller
             $result = $action->execute($request->all());
 
             return response()->json([
-                'status' => 'success',
+                'status' => 'ok',
                 'message' => 'FAQ appended successfully.',
                 'data' => $result,
             ]);
