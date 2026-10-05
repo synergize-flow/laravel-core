@@ -47,12 +47,39 @@ class DefaultAppendBlogFaqAction implements AppendBlogFaqContract
         $faq = $payload['faq'] ?? null;
         $faqHtml = '';
         if ($faq && is_array($faq) && !empty($faq['mainEntity'])) {
-            $faqHtml = "\n\n" . '<h2>Frequently Asked Questions</h2>' . "\n" . '<div class="faq-section">';
+            $css = <<<CSS
+<style>
+    .sf-faq-wrapper { font-family: inherit; margin-top: 2rem; }
+    .sf-faq-wrapper h2 { margin-bottom: 1.5rem; }
+    .sf-faq-item { border-bottom: 1px solid #eaeaea; padding: 1rem 0; }
+    .sf-faq-item:first-of-type { border-top: 1px solid #eaeaea; }
+    .sf-faq-question {
+        font-weight: 600; font-size: 1.125rem; cursor: pointer; display: flex; 
+        justify-content: space-between; align-items: center; list-style: none; margin: 0;
+    }
+    .sf-faq-question::-webkit-details-marker { display: none; }
+    .sf-faq-icon { font-size: 1.5rem; font-weight: 400; line-height: 1; color: #555; }
+    .sf-faq-item[open] .sf-faq-icon::before { content: "-"; }
+    .sf-faq-item:not([open]) .sf-faq-icon::before { content: "+"; }
+    .sf-faq-answer { margin-top: 1rem; color: #555; line-height: 1.6; }
+    .sf-faq-answer p { margin: 0; }
+</style>
+CSS;
+            $faqHtml = "\n\n" . $css . "\n" . '<div class="sf-faq-wrapper">' . "\n  <h2>Frequently Asked Questions</h2>";
             foreach ($faq['mainEntity'] as $item) {
                 if (isset($item['name']) && isset($item['acceptedAnswer']['text'])) {
                     $question = htmlspecialchars($item['name']);
                     $answer = $item['acceptedAnswer']['text'];
-                    $faqHtml .= "\n  <h3>{$question}</h3>\n  <p>{$answer}</p>";
+                    $faqHtml .= <<<HTML
+
+  <details class="sf-faq-item">
+    <summary class="sf-faq-question">
+      {$question}
+      <span class="sf-faq-icon"></span>
+    </summary>
+    <div class="sf-faq-answer"><p>{$answer}</p></div>
+  </details>
+HTML;
                 }
             }
             $faqHtml .= "\n</div>";
