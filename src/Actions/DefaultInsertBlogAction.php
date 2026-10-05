@@ -86,8 +86,9 @@ class DefaultInsertBlogAction implements InsertBlogContract
         $blog = $modelClass::create($attributes);
 
         return [
-            'id' => $blog->getKey(),
-            'link' => url('/blog/' . ($blog->{$slugField} ?? $blog->slug)),
+            'blog_title' => $blog->{$titleField} ?? $title,
+            'blog_id' => $blog->getKey(),
+            'blog_url' => url('/blog/' . ($blog->{$slugField} ?? $blog->slug)),
         ];
     }
 
