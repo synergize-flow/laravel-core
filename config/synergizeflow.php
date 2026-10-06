@@ -57,6 +57,7 @@ return [
         //         'title' => 'title',
         //         'content' => 'content',
         //         'slug' => 'slug',
+        //         'image' => 'image', // Maps to the featured image database column
         //     ],
         //     'limit' => 5,
         // ],
