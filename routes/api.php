@@ -12,4 +12,5 @@ Route::prefix('api/synergizeflow/v2')
         Route::post('helper-data', [SynergizeFlowController::class, 'helperData']);
         Route::post('insert-blog', [SynergizeFlowController::class, 'insertBlog']);
         Route::post('submit-blog-faq', [SynergizeFlowController::class, 'submitBlogFaq']);
+        Route::match(['get', 'post'], 'get-single-post', [SynergizeFlowController::class, 'getSinglePost']);
     });

@@ -109,6 +109,12 @@ return [
          * Handles appending generated FAQ schema and content to an existing blog post.
          */
         'append_blog_faq' => \SynergizeFlow\Laravel\Actions\DefaultAppendBlogFaqAction::class,
+        /**
+         * Must implement \SynergizeFlow\Laravel\Contracts\GetSinglePostContract
+         *
+         * Handles fetching a single blog post's data for external use.
+         */
+        'get_single_post' => \SynergizeFlow\Laravel\Actions\DefaultGetSinglePostAction::class,
     ],
 
     /**

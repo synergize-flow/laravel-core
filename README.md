@@ -179,8 +179,10 @@ To handle complex database insertions, you can easily override the default actio
 
    ```php
    'actions' => [
-       // Replace DefaultInsertBlogAction with your custom class
+       // Replace default actions with your custom classes
        'insert_blog' => \App\Actions\InsertComplexBlogAction::class,
+       // 'append_blog_faq' => \App\Actions\AppendComplexBlogFaqAction::class,
+       // 'get_single_post' => \App\Actions\GetComplexSinglePostAction::class,
    ],
    ```
 
@@ -198,6 +200,8 @@ This package registers the following routes under the `/api/synergizeflow/v2/` p
 | `POST` | `/api/synergizeflow/v2/get-website-data` | Returns site metadata, scan URLs, and existing content for AI onboarding. |
 | `POST` | `/api/synergizeflow/v2/helper-data` | Returns category, user, and post title dropdown lists for the SaaS dashboard. |
 | `POST` | `/api/synergizeflow/v2/insert-blog` | Receives generated article payloads from n8n and invokes your mapped Action. |
+| `POST` | `/api/synergizeflow/v2/submit-blog-faq` | Receives generated FAQ schema to append to an existing blog. |
+| `GET` / `POST` | `/api/synergizeflow/v2/get-single-post` | Retrieves a single blog post's data (title, content, image, link) for external use. |
 
 All routes are secured by the `VerifySynergizeFlowToken` middleware and require authentication via the `X-SynergizeFlow-Key` header or `key`/`license` in the request payload.
 

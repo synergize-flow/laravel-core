@@ -292,6 +292,42 @@ class SynergizeFlowController extends Controller
     }
 
     /**
+     * Endpoint to fetch a single blog post by ID.
+     */
+    public function getSinglePost(Request $request): JsonResponse
+    {
+        $actionClass = config('synergizeflow.actions.get_single_post')
+            ?: \SynergizeFlow\Laravel\Actions\DefaultGetSinglePostAction::class;
+
+        if (! class_exists($actionClass)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Configured action [{$actionClass}] does not exist.",
+            ], 500);
+        }
+
+        if (! is_subclass_of($actionClass, \SynergizeFlow\Laravel\Contracts\GetSinglePostContract::class)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Configured action [{$actionClass}] must implement ".\SynergizeFlow\Laravel\Contracts\GetSinglePostContract::class.'.',
+            ], 500);
+        }
+
+        try {
+            /** @var \SynergizeFlow\Laravel\Contracts\GetSinglePostContract $action */
+            $action = app($actionClass);
+            $result = $action->execute($request->input('id'));
+
+            return response()->json($result);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
      * Resolve and normalize the list of URLs to scan during onboarding.
      *
      * @return array{urls: array<string>, pages: array<array{url: string, title: string}>}
