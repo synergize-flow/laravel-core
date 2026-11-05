@@ -88,21 +88,52 @@ class DefaultInsertBlogAction implements InsertBlogContract
         return [
             'blog_title' => $blog->{$titleField} ?? $title,
             'blog_id' => $blog->getKey(),
-            'blog_url' => url('/blog/' . ($blog->{$slugField} ?? $blog->slug)),
+            'blog_url' => url('/blog/'.($blog->{$slugField} ?? $blog->slug)),
         ];
     }
 
     /**
-     * Download and store a remote featured image to the configured storage disk.
+     * Download and store a remote featured image or base64 data URI to the configured storage disk.
      */
     protected function storeFeaturedImage(?string $image): ?string
     {
-        if (empty($image) || ! filter_var($image, FILTER_VALIDATE_URL)) {
+        if (empty($image)) {
             return $image;
         }
 
         $disk = config('synergizeflow.storage_disk', 'public');
         $directory = trim((string) config('synergizeflow.storage_path', 'blogs'), '/');
+
+        // 1. Base64 Data URI
+        if (preg_match('/^data:image\/(\w+);base64,/', $image, $matches)) {
+            try {
+                $rawExt = strtolower($matches[1]);
+                $extension = $rawExt === 'jpeg' ? 'jpg' : $rawExt;
+                $data = substr($image, strpos($image, ',') + 1);
+                $binary = base64_decode($data, true);
+
+                if ($binary === false) {
+                    Log::warning('SynergizeFlow: Failed to decode base64 featured image.');
+
+                    return $image;
+                }
+
+                $filename = ($directory !== '' ? $directory.'/' : '').Str::random(40).'.'.$extension;
+
+                Storage::disk($disk)->put($filename, $binary, 'public');
+
+                return Storage::disk($disk)->url($filename);
+            } catch (\Throwable $e) {
+                Log::warning('SynergizeFlow: Exception storing base64 featured image: '.$e->getMessage());
+
+                return $image;
+            }
+        }
+
+        // 2. Remote URL
+        if (! filter_var($image, FILTER_VALIDATE_URL)) {
+            return $image;
+        }
 
         try {
             $response = Http::timeout(20)->get($image);
